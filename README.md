@@ -10,3 +10,4 @@ Repository for the ALU higher level programming projects.
 - `python-input_output`: Python - Input/Output
 - `SQL_introduction`: SQL - Introduction
 - `SQL_more_queries`: SQL - More queries
+- `python-network_0`: Python - Network #0
