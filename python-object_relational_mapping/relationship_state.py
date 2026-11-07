@@ -12,4 +12,8 @@ class State(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     name = Column(String(128), nullable=False)
     cities = relationship("City", back_populates="state",
-                          cascade="all, delete")
+                          cascade="all, delete-orphan", order_by="City.id",
+                          lazy="joined")
+
+
+import relationship_city  # noqa: E402,F401
