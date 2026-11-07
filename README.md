@@ -11,3 +11,4 @@ Repository for the ALU higher level programming projects.
 - `SQL_introduction`: SQL - Introduction
 - `SQL_more_queries`: SQL - More queries
 - `python-network_0`: Python - Network #0
+- `python-network_1`: Python - Network #1
