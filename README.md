@@ -9,3 +9,4 @@ Repository for the ALU higher level programming projects.
 - `python-inheritance`: Python - Inheritance
 - `python-input_output`: Python - Input/Output
 - `SQL_introduction`: SQL - Introduction
+- `SQL_more_queries`: SQL - More queries
