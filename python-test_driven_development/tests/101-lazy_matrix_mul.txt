@@ -1,53 +1,19 @@
->>> import sys, numpy
->>> lazy_matrix_mul = __import__('101-lazy_matrix_mul').lazy_matrix_mul
->>> def probe(a, b):
-...     try:
-...         lazy_matrix_mul(a, b)
-...     except BaseException as e:
-...         if isinstance(e, TypeError):
-...             return 'T'
-...         if isinstance(e, ValueError):
-...             return 'V'
-...         return 'O'
-...     return 'N'
->>> cases = [
-...     ('a', [[1]]), (None, [[1]]), (1, [[1]]), ({}, [[1]]), ([1, 2], [[1]]),
-...     ([[1]], 'a'), ([[1]], None), ([[1]], 1), ([[1]], {}), ([[1]], [1, 2]),
-...     ([], [[1]]), ([[]], [[1]]), ([[1]], []), ([[1]], [[]]),
-...     ([['a', 2]], [[1], [2]]), ([[1, 2]], [['a'], [2]]),
-...     ([[1, 2], [3]], [[1], [2]]), ([[1, 2]], [[1], [2, 3]]),
-...     ([[1, 2]], [[3, 4]]),
-...     ([[1, 2], [3, 4]], [[1, 2, 3]]), ([[True]], [[1]]),
-... ]
->>> print(numpy.__version__ + ' py' + sys.version.split()[0] + ' ' + ''.join(probe(a, b) for a, b in cases) + ' ' + str(len(cases)))
-PROBE-EXPECTED-NOTHING
->>> def kind(a, b):
-...     try:
-...         lazy_matrix_mul(a, b)
-...     except BaseException as e:
-...         return type(e).__name__
-...     return 'N'
->>> print(','.join(kind(*cases[i]) for i in (1, 3, 14, 16, 17, 18)))
-PROBE2-EXPECTED-NOTHING
-
 ================================
 Test cases for lazy_matrix_mul()
 ================================
 
 The function multiplies two matrices with NumPy. The valid products are
 the same as for matrix_mul(), but invalid arguments raise the exceptions
-of NumPy instead of the messages of matrix_mul(). The class (a TypeError or
-a ValueError) and the message of these exceptions depend on the NumPy
-version, so every invalid example only checks that NumPy raised an error
-of one of these two classes. Only the shapes that can't be multiplied are
-checked for the exact ValueError, because it is raised by every version.
-The products are shown as lists with tolist() so that no NumPy specific
-repr is printed.
+of NumPy instead of the messages of matrix_mul(). These tests are pinned
+to the behavior of NumPy 1.15.0, the version required by the project, and
+they check the exact exception class: TypeError or ValueError. Other
+versions of NumPy raise other classes for some of the inputs. The products
+are shown as lists with tolist() so that no NumPy specific repr is printed.
 
 >>> lazy_matrix_mul = __import__('101-lazy_matrix_mul').lazy_matrix_mul
 
-Sample products from the project page
--------------------------------------
+Sample products of the project page
+-----------------------------------
 >>> print(lazy_matrix_mul([[1, 2], [3, 4]], [[1, 2], [3, 4]]))
 [[ 7 10]
  [15 22]]
@@ -205,303 +171,376 @@ The arguments are unchanged
 >>> m_b
 [[5, 6], [7, 8]]
 
-Helpers that tell which kind of exception NumPy raised
-------------------------------------------------------
-The messages of NumPy depend on its version and never name m_a or m_b.
-error() gives the same label for a TypeError and for a ValueError.
-failure() gives the exact class name and is used only when every
-version of NumPy raises the same class.
+Helper that tells which exception NumPy raised
+----------------------------------------------
+kind() gives the exact base class of the exception, the text no error
+when there is none, and custom message for an exception that names m_a
+or m_b, because NumPy messages never do.
 
->>> def failure(m_a, m_b):
+>>> def kind(m_a, m_b):
 ...     try:
 ...         lazy_matrix_mul(m_a, m_b)
 ...     except Exception as e:
 ...         if 'm_a' in str(e) or 'm_b' in str(e):
 ...             return 'custom message'
-...         if isinstance(e, ValueError):
-...             return 'ValueError'
 ...         if isinstance(e, TypeError):
 ...             return 'TypeError'
-...         return 'other exception'
-...     return 'no exception'
->>> def error(m_a, m_b):
-...     try:
-...         lazy_matrix_mul(m_a, m_b)
-...     except Exception as e:
-...         if 'm_a' in str(e) or 'm_b' in str(e):
-...             return 'custom message'
-...         if isinstance(e, (TypeError, ValueError)):
-...             return 'error'
-...         return 'other exception'
-...     return 'no exception'
+...         if isinstance(e, ValueError):
+...             return 'ValueError'
+...         return type(e).__name__
+...     return 'no error'
 
 m_a is not a list
 -----------------
-NumPy raises a ValueError or a TypeError for a scalar, None, a dict
-or a string, and the class depends on the version.
+A scalar, a string, a float, inf or nan is a ValueError for NumPy 1.15.0.
+None and a dict are a TypeError.
 
->>> error(5, [[1]])
-'error'
->>> error(1.5, [[1]])
-'error'
->>> error(-3, [[1]])
-'error'
->>> error(0, [[1]])
-'error'
->>> error(None, [[1]])
-'error'
->>> error({}, [[1]])
-'error'
->>> error({1: [1]}, [[1]])
-'error'
->>> error("abc", [[1]])
-'error'
->>> error("", [[1]])
-'error'
->>> error(float('inf'), [[1]])
-'error'
->>> error(float('nan'), [[1]])
-'error'
->>> error(5, [[1, 2], [3, 4]])
-'error'
->>> error(None, [[1, 2], [3, 4]])
-'error'
+>>> kind(5, [[1]])
+'ValueError'
+>>> kind(1.5, [[1]])
+'ValueError'
+>>> kind(-3, [[1]])
+'ValueError'
+>>> kind(0, [[1]])
+'ValueError'
+>>> kind(None, [[1]])
+'TypeError'
+>>> kind({}, [[1]])
+'TypeError'
+>>> kind({1: [1]}, [[1]])
+'TypeError'
+>>> kind("abc", [[1]])
+'ValueError'
+>>> kind("", [[1]])
+'ValueError'
+>>> kind(float('inf'), [[1]])
+'ValueError'
+>>> kind(float('nan'), [[1]])
+'ValueError'
+>>> kind(5, [[1, 2], [3, 4]])
+'ValueError'
+>>> kind(None, [[1, 2], [3, 4]])
+'TypeError'
+>>> kind({}, [[1, 2], [3, 4]])
+'TypeError'
+>>> kind((1, 2), [[1]])
+'ValueError'
 
 m_b is not a list
 -----------------
-
->>> error([[1]], 5)
-'error'
->>> error([[1]], 1.5)
-'error'
->>> error([[1]], -3)
-'error'
->>> error([[1]], 0)
-'error'
->>> error([[1]], None)
-'error'
->>> error([[1]], {})
-'error'
->>> error([[1]], {1: [1]})
-'error'
->>> error([[1]], "abc")
-'error'
->>> error([[1]], "")
-'error'
->>> error([[1]], float('inf'))
-'error'
->>> error([[1]], float('nan'))
-'error'
->>> error([[1, 2], [3, 4]], 5)
-'error'
->>> error([[1, 2], [3, 4]], None)
-'error'
+>>> kind([[1]], 5)
+'ValueError'
+>>> kind([[1]], 1.5)
+'ValueError'
+>>> kind([[1]], -3)
+'ValueError'
+>>> kind([[1]], 0)
+'ValueError'
+>>> kind([[1]], None)
+'TypeError'
+>>> kind([[1]], {})
+'TypeError'
+>>> kind([[1]], {1: [1]})
+'TypeError'
+>>> kind([[1]], "abc")
+'ValueError'
+>>> kind([[1]], "")
+'ValueError'
+>>> kind([[1]], float('inf'))
+'ValueError'
+>>> kind([[1]], float('nan'))
+'ValueError'
+>>> kind([[1, 2], [3, 4]], 5)
+'ValueError'
+>>> kind([[1, 2], [3, 4]], None)
+'TypeError'
+>>> kind([[1, 2], [3, 4]], {})
+'TypeError'
+>>> kind([[1]], (1, 2))
+'ValueError'
 
 m_a is not a list of lists
 --------------------------
-Here the elements are not lists and can't be multiplied with m_b.
+Here the elements of m_a are not lists. Strings, None and dicts are a
+TypeError, numbers are a ValueError.
 
->>> error(["a", "b"], [[1], [2]])
-'error'
->>> error([None, None], [[1], [2]])
-'error'
->>> error([{}, {}], [[1], [2]])
-'error'
->>> error([1, 2], [[1, 2, 3]])
-'error'
->>> error([1, 2, 3], [[1, 2]])
-'error'
->>> error([[1, 2], 3], [[1, 2, 3]])
-'error'
->>> error([3, [1, 2]], [[1, 2, 3]])
-'error'
->>> error(["ab", "cd"], [[1], [2]])
-'error'
+>>> kind(["a", "b"], [[1], [2]])
+'TypeError'
+>>> kind([None, None], [[1], [2]])
+'TypeError'
+>>> kind([{}, {}], [[1], [2]])
+'TypeError'
+>>> kind([1, 2], [[1, 2, 3]])
+'ValueError'
+>>> kind([1, 2, 3], [[1, 2]])
+'ValueError'
+>>> kind([[1, 2], 3], [[1, 2, 3]])
+'ValueError'
+>>> kind([3, [1, 2]], [[1, 2, 3]])
+'ValueError'
+>>> kind(["ab", "cd"], [[1], [2]])
+'TypeError'
+>>> kind([None], [[1]])
+'TypeError'
+>>> kind([1.5, 2.5], [[1, 2, 3]])
+'ValueError'
 
 m_b is not a list of lists
 --------------------------
-
->>> error([[1], [2]], ["a", "b"])
-'error'
->>> error([[1], [2]], [None, None])
-'error'
->>> error([[1], [2]], [{}, {}])
-'error'
->>> error([[1, 2, 3]], [1, 2])
-'error'
->>> error([[1, 2]], [1, 2, 3])
-'error'
->>> error([[1, 2, 3]], [[1, 2], 3])
-'error'
->>> error([[1, 2, 3]], [3, [1, 2]])
-'error'
->>> error([[1], [2]], ["ab", "cd"])
-'error'
+>>> kind([[1], [2]], ["a", "b"])
+'ValueError'
+>>> kind([[1], [2]], [None, None])
+'TypeError'
+>>> kind([[1], [2]], [{}, {}])
+'TypeError'
+>>> kind([[1, 2, 3]], [1, 2])
+'ValueError'
+>>> kind([[1, 2]], [1, 2, 3])
+'ValueError'
+>>> kind([[1, 2, 3]], [[1, 2], 3])
+'ValueError'
+>>> kind([[1, 2, 3]], [3, [1, 2]])
+'ValueError'
+>>> kind([[1], [2]], ["ab", "cd"])
+'ValueError'
+>>> kind([[1]], [None])
+'TypeError'
+>>> kind([[1, 2, 3]], [1.5, 2.5])
+'ValueError'
 
 m_a is empty
 ------------
-[] has the shape (0,) and [[]] has the shape (1, 0) for NumPy, so each
-of these examples has an inner size that doesn't match the other matrix.
-The empty argument is never multiplied with a matrix that fits it.
+[] has the shape (0,) and [[]] has the shape (1, 0) for NumPy, so these
+examples have an inner size that does not fit the other matrix.
 
->>> error([], [[1]])
-'error'
->>> error([[]], [[1]])
-'error'
->>> error([[]], [[1, 2]])
-'error'
->>> error([], [[1, 2]])
-'error'
->>> error([], [[1], [2]])
-'error'
->>> error([[]], [[1], [2]])
-'error'
->>> error([[]], [[]])
-'error'
+>>> kind([], [[1]])
+'ValueError'
+>>> kind([[]], [[1]])
+'ValueError'
+>>> kind([[]], [[1, 2]])
+'ValueError'
+>>> kind([], [[1, 2]])
+'ValueError'
+>>> kind([], [[1], [2]])
+'ValueError'
+>>> kind([[]], [[1], [2]])
+'ValueError'
+>>> kind([[]], [[]])
+'ValueError'
+>>> kind([[], []], [[1]])
+'ValueError'
+>>> kind([[]], [[], []])
+'ValueError'
 
 m_b is empty
 ------------
-
->>> error([[1]], [])
-'error'
->>> error([[1, 2]], [[]])
-'error'
->>> error([[1, 2]], [])
-'error'
->>> error([[1], [2]], [])
-'error'
->>> error([[]], [[]])
-'error'
+>>> kind([[1]], [])
+'ValueError'
+>>> kind([[1, 2]], [[]])
+'ValueError'
+>>> kind([[1, 2]], [])
+'ValueError'
+>>> kind([[1], [2]], [])
+'ValueError'
+>>> kind([[1]], [[], []])
+'ValueError'
 
 m_a is a list of lists of not numbers
 -------------------------------------
-m_a contains strings, None or other objects and m_b contains numbers.
-NumPy raises a TypeError (a ValueError for some inputs and versions).
+m_a holds strings or None and m_b holds numbers, and the shapes fit, so
+NumPy 1.15.0 raises a TypeError. When the shapes do not fit, the shape
+error (a ValueError) comes first.
 
->>> error([["a"]], [[1]])
-'error'
->>> error([["a", "b"]], [[1], [2]])
-'error'
->>> error([[1, "a"]], [[1], [2]])
-'error'
->>> error([["a", 2]], [[1], [2]])
-'error'
->>> error([[1, 2], [3, "a"]], [[1, 2], [3, 4]])
-'error'
->>> error([["1"]], [[1]])
-'error'
->>> error([["1", "2"], ["3", "4"]], [[1, 2], [3, 4]])
-'error'
->>> error([[None]], [[1]])
-'error'
->>> error([[1, None]], [[1], [2]])
-'error'
->>> error([[None, None], [None, None]], [[1, 2], [3, 4]])
-'error'
->>> error([["abc"]], [[1.5]])
-'error'
+>>> kind([["a"]], [[1]])
+'TypeError'
+>>> kind([["a"]], [[1, 2]])
+'TypeError'
+>>> kind([["a", "b"]], [[1], [2]])
+'TypeError'
+>>> kind([[1, "a"]], [[1], [2]])
+'TypeError'
+>>> kind([["a", 2]], [[1], [2]])
+'TypeError'
+>>> kind([["a", 2]], [[1, 2, 3], [4, 5, 6]])
+'TypeError'
+>>> kind([[1, 2], [3, "a"]], [[1, 2], [3, 4]])
+'TypeError'
+>>> kind([["a", 2], [3, 4]], [[1, 2], [3, 4]])
+'TypeError'
+>>> kind([[1, 2], ["a", 4]], [[1], [2]])
+'TypeError'
+>>> kind([["1"]], [[1]])
+'TypeError'
+>>> kind([["1", "2"], ["3", "4"]], [[1, 2], [3, 4]])
+'TypeError'
+>>> kind([[None]], [[1]])
+'TypeError'
+>>> kind([[1, None]], [[1], [2]])
+'TypeError'
+>>> kind([[None, None], [None, None]], [[1, 2], [3, 4]])
+'TypeError'
+>>> kind([["abc"]], [[1.5]])
+'TypeError'
+>>> kind([["a", "b"], ["c", "d"]], [[1.5], [2.5]])
+'TypeError'
+>>> kind([["a", 2]], [[1, 2]])
+'ValueError'
+>>> kind([["a"]], [[1], [2]])
+'ValueError'
+>>> kind([["a", "b"]], [[1, 2, 3]])
+'ValueError'
 
 m_b is a list of lists of not numbers
 -------------------------------------
-m_b contains strings, None or other objects and m_a contains numbers.
+m_b holds strings or None and m_a holds numbers, and the shapes fit.
 
->>> error([[1]], [["a"]])
-'error'
->>> error([[1, 2]], [["a"], ["b"]])
-'error'
->>> error([[1, 2]], [[1], ["a"]])
-'error'
->>> error([[1, 2]], [["a"], [2]])
-'error'
->>> error([[1, 2], [3, 4]], [[1, 2], [3, "a"]])
-'error'
->>> error([[1]], [["1"]])
-'error'
->>> error([[1, 2], [3, 4]], [["1", "2"], ["3", "4"]])
-'error'
->>> error([[1]], [[None]])
-'error'
->>> error([[1, 2]], [[1], [None]])
-'error'
->>> error([[1, 2], [3, 4]], [[None, None], [None, None]])
-'error'
->>> error([[1.5]], [["abc"]])
-'error'
+>>> kind([[1]], [["a"]])
+'TypeError'
+>>> kind([[1, 2]], [["a"], ["b"]])
+'TypeError'
+>>> kind([[1, 2]], [[1], ["a"]])
+'TypeError'
+>>> kind([[1, 2]], [["a"], [2]])
+'TypeError'
+>>> kind([[1]], [["a", 2]])
+'TypeError'
+>>> kind([[1, 2]], [["a", "b"], [3, 4]])
+'TypeError'
+>>> kind([[1, 2]], [[1, "b"], [3, 4]])
+'TypeError'
+>>> kind([[1, 2], [3, 4]], [[1, 2], [3, "a"]])
+'TypeError'
+>>> kind([[1, 2], [3, 4]], [["a", 2], [3, 4]])
+'TypeError'
+>>> kind([[1, 2], [3, 4]], [[1, 2], ["a", 4]])
+'TypeError'
+>>> kind([[1]], [["1"]])
+'TypeError'
+>>> kind([[1, 2], [3, 4]], [["1", "2"], ["3", "4"]])
+'TypeError'
+>>> kind([[1]], [[None]])
+'TypeError'
+>>> kind([[1, 2]], [[1], [None]])
+'TypeError'
+>>> kind([[1, 2], [3, 4]], [[None, None], [None, None]])
+'TypeError'
+>>> kind([[1.5]], [["abc"]])
+'TypeError'
+>>> kind([[1.5, 2.5]], [["a"], ["b"]])
+'TypeError'
+>>> kind([[1], [2]], [["a", 2]])
+'TypeError'
+>>> kind([[1, 2]], [["a"]])
+'ValueError'
+>>> kind([[1], [2]], [["a"], ["b"], ["c"]])
+'ValueError'
+>>> kind([[1, 2, 3]], [["a", "b"]])
+'ValueError'
 
-m_a has rows of different sizes (each row of m_a must be of the same size)
---------------------------------------------------------------------------
-m_a is not a rectangle and m_b is valid. NumPy 1.24 and later raises a
-ValueError at once, while older versions build an array of objects and
-the result depends on the sizes. So m_b is chosen to make the product
-impossible for every version of NumPy.
+m_a has rows of different sizes
+-------------------------------
+m_a is not a rectangle and m_b is a valid matrix. NumPy 1.15.0 raises a
+ValueError, whatever the order of the short and the long row.
 
->>> error([[1, 2], [3]], [[1, 2, 3]])
-'error'
->>> error([[1], [2, 3]], [[1, 2, 3]])
-'error'
->>> error([[1, 2], [3]], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-'error'
->>> error([[1, 2, 3], [4, 5], [6]], [[1, 2], [3, 4]])
-'error'
->>> error([[1, 2], [3, 4, 5]], [[1, 2, 3, 4, 5]])
-'error'
->>> error([[1, 2], []], [[1, 2, 3]])
-'error'
->>> error([[], [1, 2]], [[1, 2, 3]])
-'error'
->>> error([[1, 2, 3], [4, 5]], [[1], [2], [3], [4]])
-'error'
+>>> kind([[1, 2], [3]], [[1, 2, 3]])
+'ValueError'
+>>> kind([[1], [2, 3]], [[1, 2, 3]])
+'ValueError'
+>>> kind([[1, 2], [3]], [[1], [2]])
+'ValueError'
+>>> kind([[1], [2, 3]], [[1], [2]])
+'ValueError'
+>>> kind([[1, 2], [3]], [[1, 2], [3, 4]])
+'ValueError'
+>>> kind([[1], [2, 3]], [[1, 2], [3, 4]])
+'ValueError'
+>>> kind([[1, 2], [3]], [[1, 2, 3], [4, 5, 6]])
+'ValueError'
+>>> kind([[1, 2], [3]], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+'ValueError'
+>>> kind([[1, 2, 3], [4, 5], [6]], [[1, 2], [3, 4]])
+'ValueError'
+>>> kind([[1, 2, 3], [4, 5]], [[1], [2], [3]])
+'ValueError'
+>>> kind([[1, 2], [3, 4, 5]], [[1, 2, 3, 4, 5]])
+'ValueError'
+>>> kind([[1, 2], [3, 4, 5]], [[1, 2], [3, 4]])
+'ValueError'
+>>> kind([[1, 2], []], [[1, 2, 3]])
+'ValueError'
+>>> kind([[], [1, 2]], [[1, 2, 3]])
+'ValueError'
+>>> kind([[1, 2, 3], [4, 5]], [[1], [2], [3], [4]])
+'ValueError'
+>>> kind([[1.5, 2], [3]], [[1], [2]])
+'ValueError'
 
-m_b has rows of different sizes (each row of m_b must be of the same size)
---------------------------------------------------------------------------
-m_b is not a rectangle and m_a is valid.
+m_b has rows of different sizes
+-------------------------------
+m_b is not a rectangle and m_a is a valid matrix.
 
->>> error([[1, 2, 3]], [[1, 2], [3]])
-'error'
->>> error([[1, 2, 3]], [[1], [2, 3]])
-'error'
->>> error([[1, 2, 3], [4, 5, 6], [7, 8, 9]], [[1, 2], [3]])
-'error'
->>> error([[1, 2], [3, 4]], [[1, 2, 3], [4, 5], [6]])
-'error'
->>> error([[1, 2, 3, 4, 5]], [[1, 2], [3, 4, 5]])
-'error'
->>> error([[1, 2, 3]], [[1, 2], []])
-'error'
->>> error([[1, 2, 3]], [[], [1, 2]])
-'error'
->>> error([[1], [2], [3], [4]], [[1, 2, 3], [4, 5]])
-'error'
+>>> kind([[1, 2, 3]], [[1, 2], [3]])
+'ValueError'
+>>> kind([[1, 2, 3]], [[1], [2, 3]])
+'ValueError'
+>>> kind([[1, 2]], [[1, 2], [3]])
+'ValueError'
+>>> kind([[1, 2]], [[1], [2, 3]])
+'ValueError'
+>>> kind([[1, 2], [3, 4]], [[1, 2], [3]])
+'ValueError'
+>>> kind([[1, 2], [3, 4]], [[1], [2, 3]])
+'ValueError'
+>>> kind([[1, 2, 3], [4, 5, 6], [7, 8, 9]], [[1, 2], [3]])
+'ValueError'
+>>> kind([[1, 2], [3, 4]], [[1, 2, 3], [4, 5], [6]])
+'ValueError'
+>>> kind([[1, 2], [3, 4]], [[1, 2, 3], [4, 5]])
+'ValueError'
+>>> kind([[1, 2, 3, 4, 5]], [[1, 2], [3, 4, 5]])
+'ValueError'
+>>> kind([[1, 2], [3, 4]], [[1, 2], [3, 4, 5]])
+'ValueError'
+>>> kind([[1, 2, 3]], [[1, 2], []])
+'ValueError'
+>>> kind([[1, 2, 3]], [[], [1, 2]])
+'ValueError'
+>>> kind([[1], [2], [3], [4]], [[1, 2, 3], [4, 5]])
+'ValueError'
+>>> kind([[1, 2]], [[1.5, 2], [3]])
+'ValueError'
 
 m_a and m_b can't be multiplied
 -------------------------------
-This ValueError is raised by every version of NumPy.
-
->>> failure([[1, 2]], [[3, 4]])
+>>> kind([[1, 2]], [[3, 4]])
 'ValueError'
->>> failure([[1, 2]], [[1, 2]])
+>>> kind([[1, 2]], [[1, 2]])
 'ValueError'
->>> failure([[1], [2]], [[1], [2]])
+>>> kind([[1], [2]], [[1], [2]])
 'ValueError'
->>> failure([[1, 2], [3, 4]], [[1, 2, 3]])
+>>> kind([[1, 2], [3, 4]], [[1, 2, 3]])
 'ValueError'
->>> failure([[1, 2, 3]], [[1, 2], [3, 4]])
+>>> kind([[1, 2, 3]], [[1, 2], [3, 4]])
 'ValueError'
->>> failure([[1]], [[1], [2]])
+>>> kind([[1]], [[1], [2]])
 'ValueError'
->>> failure([[1, 2]], [[1]])
+>>> kind([[1, 2]], [[1]])
 'ValueError'
->>> failure([[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]])
+>>> kind([[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]])
 'ValueError'
->>> failure([[1, 2], [3, 4], [5, 6]], [[1, 2], [3, 4], [5, 6]])
+>>> kind([[1, 2], [3, 4], [5, 6]], [[1, 2], [3, 4], [5, 6]])
 'ValueError'
->>> failure([[1.5, 2.5]], [[1.5, 2.5]])
+>>> kind([[1.5, 2.5]], [[1.5, 2.5]])
 'ValueError'
->>> failure([[-1, -2]], [[-3, -4]])
+>>> kind([[-1, -2]], [[-3, -4]])
 'ValueError'
->>> failure([[float('inf'), 1]], [[1, 2]])
+>>> kind([[float('inf'), 1]], [[1, 2]])
 'ValueError'
->>> failure([[1, 2]], [[float('nan'), 1]])
+>>> kind([[1, 2]], [[float('nan'), 1]])
+'ValueError'
+>>> kind([[1, 2, 3, 4]], [[1, 2, 3, 4]])
+'ValueError'
+>>> kind([[1], [2], [3]], [[1], [2], [3]])
 'ValueError'
 
 >>> lazy_matrix_mul([[1, 2]], [[3, 4]])  # doctest: +IGNORE_EXCEPTION_DETAIL
@@ -516,13 +555,18 @@ ValueError: shapes (2,1) and (2,1) not aligned
 
 Valid matrices are not rejected
 -------------------------------
-
->>> error([[1, 2]], [[3], [4]])
-'no exception'
->>> error([[1.5, 2]], [[3], [4.5]])
-'no exception'
->>> error([[1]], [[1]])
-'no exception'
+>>> kind([[1, 2]], [[3], [4]])
+'no error'
+>>> kind([[1.5, 2]], [[3], [4.5]])
+'no error'
+>>> kind([[1]], [[1]])
+'no error'
+>>> kind([[1]], [[]])
+'no error'
+>>> kind([[1, 2], [3, 4]], [[1], [2]])
+'no error'
+>>> kind([[True]], [[1]])
+'no error'
 
 Missing arguments are reported by Python
 ----------------------------------------
