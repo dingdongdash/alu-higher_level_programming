@@ -1,0 +1,340 @@
+================================
+Test cases for lazy_matrix_mul()
+================================
+
+The function multiplies two matrices with NumPy. The valid products are
+the same as for matrix_mul(), but invalid arguments raise the exceptions
+of NumPy, whose messages depend on the NumPy version. The examples only
+rely on facts that hold for every version, and the products are shown
+as lists with tolist() so that no NumPy specific repr is printed.
+
+>>> lazy_matrix_mul = __import__('101-lazy_matrix_mul').lazy_matrix_mul
+
+Sample products from the project page
+-------------------------------------
+>>> print(lazy_matrix_mul([[1, 2], [3, 4]], [[1, 2], [3, 4]]))
+[[ 7 10]
+ [15 22]]
+>>> print(lazy_matrix_mul([[1, 2]], [[3, 4], [5, 6]]))
+[[13 16]]
+>>> print(lazy_matrix_mul([[1, 2], [3, 4]], [[1], [2]]))
+[[ 5]
+ [11]]
+>>> type(lazy_matrix_mul([[1, 2]], [[3, 4], [5, 6]])).__name__
+'ndarray'
+>>> lazy_matrix_mul([[1, 2], [3, 4]], [[1, 2], [3, 4]]).shape
+(2, 2)
+>>> lazy_matrix_mul([[1, 2]], [[3, 4], [5, 6]]).shape
+(1, 2)
+>>> lazy_matrix_mul([[1, 2, 3], [4, 5, 6]], [[7, 8], [9, 10], [11, 12]]).shape
+(2, 2)
+>>> lazy_matrix_mul([[1], [2], [3]], [[4, 5, 6]]).shape
+(3, 3)
+>>> lazy_matrix_mul([[1, 2, 3]], [[4], [5], [6]]).shape
+(1, 1)
+>>> lazy_matrix_mul([[1, 2], [3, 4]], [[1, 2], [3, 4]]).dtype.kind
+'i'
+>>> lazy_matrix_mul([[1.5, 2]], [[2], [4]]).dtype.kind
+'f'
+
+
+Products as lists
+-----------------
+
+>>> print(lazy_matrix_mul([[1, 2], [3, 4]], [[1, 2], [3, 4]]).tolist())
+[[7, 10], [15, 22]]
+>>> print(lazy_matrix_mul([[1, 2]], [[3, 4], [5, 6]]).tolist())
+[[13, 16]]
+
+>>> print(lazy_matrix_mul([[5]], [[6]]).tolist())
+[[30]]
+>>> print(lazy_matrix_mul([[0]], [[7]]).tolist())
+[[0]]
+>>> print(lazy_matrix_mul([[-2]], [[3]]).tolist())
+[[-6]]
+>>> print(lazy_matrix_mul([[-2]], [[-3]]).tolist())
+[[6]]
+>>> print(lazy_matrix_mul([[2.5]], [[2]]).tolist())
+[[5.0]]
+>>> print(lazy_matrix_mul([[0.5]], [[1.5]]).tolist())
+[[0.75]]
+
+>>> print(lazy_matrix_mul([[1, 2, 3]], [[4], [5], [6]]).tolist())
+[[32]]
+>>> print(lazy_matrix_mul([[1], [2], [3]], [[4, 5, 6]]).tolist())
+[[4, 5, 6], [8, 10, 12], [12, 15, 18]]
+>>> print(lazy_matrix_mul([[1], [2]], [[3, 4]]).tolist())
+[[3, 4], [6, 8]]
+>>> print(lazy_matrix_mul([[1, 2], [3, 4]], [[1], [2]]).tolist())
+[[5], [11]]
+>>> print(lazy_matrix_mul(
+...     [[1, 2, 3], [4, 5, 6]],
+...     [[7, 8], [9, 10], [11, 12]]).tolist())
+[[58, 64], [139, 154]]
+>>> print(lazy_matrix_mul(
+...     [[1, 2], [3, 4], [5, 6]],
+...     [[1, 2, 3, 4], [5, 6, 7, 8]]).tolist())
+[[11, 14, 17, 20], [23, 30, 37, 44], [35, 46, 57, 68]]
+>>> print(lazy_matrix_mul(
+...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+...     [[9, 8, 7], [6, 5, 4], [3, 2, 1]]).tolist())
+[[30, 24, 18], [84, 69, 54], [138, 114, 90]]
+>>> print(lazy_matrix_mul([[1, 2, 3, 4]], [[1], [1], [1], [1]]).tolist())
+[[10]]
+
+>>> print(lazy_matrix_mul([[1, 0], [0, 1]], [[5, 6], [7, 8]]).tolist())
+[[5, 6], [7, 8]]
+>>> print(lazy_matrix_mul([[5, 6], [7, 8]], [[1, 0], [0, 1]]).tolist())
+[[5, 6], [7, 8]]
+>>> print(lazy_matrix_mul([[0, 0], [0, 0]], [[1, 2], [3, 4]]).tolist())
+[[0, 0], [0, 0]]
+>>> print(lazy_matrix_mul([[1, 2], [3, 4]], [[0, 0], [0, 0]]).tolist())
+[[0, 0], [0, 0]]
+>>> print(lazy_matrix_mul([[-1, 2], [3, -4]], [[-1, -2], [3, 4]]).tolist())
+[[7, 10], [-15, -22]]
+>>> print(lazy_matrix_mul([[-1, -2, -3]], [[1], [1], [1]]).tolist())
+[[-6]]
+
+>>> print(lazy_matrix_mul([[1.5, 2.5]], [[2], [4]]).tolist())
+[[13.0]]
+>>> print(lazy_matrix_mul(
+...     [[0.5, 0.5], [1.5, 2.5]],
+...     [[2, 4], [6, 8]]).tolist())
+[[4.0, 6.0], [18.0, 26.0]]
+>>> print(lazy_matrix_mul([[1, 2.5]], [[2], [4]]).tolist())
+[[12.0]]
+>>> print(lazy_matrix_mul(
+...     [[0.5, 1.5], [2.5, 3.5]],
+...     [[0.5, 1.5], [2.5, 3.5]]).tolist())
+[[4.0, 6.0], [10.0, 16.0]]
+>>> print(lazy_matrix_mul([[1.5]], [[1.5]]).tolist())
+[[2.25]]
+>>> print(lazy_matrix_mul([[-1.5, 2.0]], [[2.0], [1.25]]).tolist())
+[[-0.5]]
+>>> print(lazy_matrix_mul(
+...     [[1.0, 2.0], [3.0, 4.0]],
+...     [[1.0, 0.0], [0.0, 1.0]]).tolist())
+[[1.0, 2.0], [3.0, 4.0]]
+
+>>> print(lazy_matrix_mul([[10**9, 10**9]], [[10**9], [10**9]]).tolist())
+[[2000000000000000000]]
+>>> print(lazy_matrix_mul([[1e300]], [[1e300]]).tolist())
+[[inf]]
+>>> print(lazy_matrix_mul([[1e308]], [[10.0]]).tolist())
+[[inf]]
+
+>>> print(lazy_matrix_mul([[float('inf')]], [[2]]).tolist())
+[[inf]]
+>>> print(lazy_matrix_mul([[float('inf')]], [[-2]]).tolist())
+[[-inf]]
+>>> print(lazy_matrix_mul([[-float('inf')]], [[2]]).tolist())
+[[-inf]]
+>>> print(lazy_matrix_mul([[-float('inf')]], [[-2]]).tolist())
+[[inf]]
+>>> print(lazy_matrix_mul([[2]], [[float('inf')]]).tolist())
+[[inf]]
+>>> print(lazy_matrix_mul([[float('inf')]], [[0]]).tolist())
+[[nan]]
+>>> print(lazy_matrix_mul([[float('inf')]], [[float('inf')]]).tolist())
+[[inf]]
+>>> print(lazy_matrix_mul([[float('inf'), 1]], [[1], [1]]).tolist())
+[[inf]]
+>>> print(lazy_matrix_mul(
+...     [[float('inf'), 1]],
+...     [[1], [-float('inf')]]).tolist())
+[[nan]]
+>>> print(lazy_matrix_mul([[float('nan')]], [[2]]).tolist())
+[[nan]]
+>>> print(lazy_matrix_mul([[2]], [[float('nan')]]).tolist())
+[[nan]]
+>>> print(lazy_matrix_mul([[float('nan'), 1]], [[1], [1]]).tolist())
+[[nan]]
+>>> print(lazy_matrix_mul(
+...     [[1.0, 2.0], [3.0, 4.0]],
+...     [[float('nan'), 0.0], [0.0, 1.0]]).tolist())
+[[nan, 2.0], [nan, 4.0]]
+
+The arguments are unchanged
+---------------------------
+>>> m_a = [[1, 2], [3, 4]]
+>>> m_b = [[5, 6], [7, 8]]
+>>> print(lazy_matrix_mul(m_a, m_b).tolist())
+[[19, 22], [43, 50]]
+>>> m_a
+[[1, 2], [3, 4]]
+>>> m_b
+[[5, 6], [7, 8]]
+>>> result = lazy_matrix_mul(m_a, m_b)
+>>> result[0][0] = 0
+>>> m_a
+[[1, 2], [3, 4]]
+>>> m_b
+[[5, 6], [7, 8]]
+
+Helper that tells which kind of exception NumPy raised
+------------------------------------------------------
+The messages of NumPy depend on its version and never name m_a or m_b.
+
+>>> def failure(m_a, m_b):
+...     try:
+...         lazy_matrix_mul(m_a, m_b)
+...     except Exception as error:
+...         if 'm_a' in str(error) or 'm_b' in str(error):
+...             return 'custom message'
+...         for kind in (ValueError, TypeError):
+...             if isinstance(error, kind):
+...                 return kind.__name__
+...         return 'other exception'
+...     return 'no exception'
+
+Shapes that can't be multiplied raise a ValueError
+--------------------------------------------------
+
+>>> failure([[1, 2]], [[1, 2]])
+'ValueError'
+>>> failure([[1], [2]], [[1], [2]])
+'ValueError'
+>>> failure([[1, 2], [3, 4]], [[1, 2, 3]])
+'ValueError'
+>>> failure([[1, 2, 3]], [[1, 2], [3, 4]])
+'ValueError'
+>>> failure([[1]], [[1], [2]])
+'ValueError'
+>>> failure([[1, 2]], [[1]])
+'ValueError'
+>>> failure([[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]])
+'ValueError'
+>>> failure([[1, 2], [3, 4], [5, 6]], [[1, 2], [3, 4], [5, 6]])
+'ValueError'
+
+>>> lazy_matrix_mul([[1, 2]], [[1, 2]])  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+    ...
+ValueError: shapes (1,2) and (1,2) not aligned
+
+>>> lazy_matrix_mul([[1], [2]], [[1], [2]])  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+    ...
+ValueError: shapes (2,1) and (2,1) not aligned
+
+Empty matrices can't be multiplied
+----------------------------------
+
+>>> failure([], [[1]])
+'ValueError'
+>>> failure([[1]], [])
+'ValueError'
+>>> failure([[]], [[1]])
+'ValueError'
+>>> failure([[]], [[]])
+'ValueError'
+>>> failure([[1, 2]], [])
+'ValueError'
+>>> failure([], [[1, 2]])
+'ValueError'
+>>> failure([[]], [[1, 2]])
+'ValueError'
+
+Arguments that are not matrices raise a ValueError or a TypeError
+-----------------------------------------------------------------
+
+>>> failure(5, [[1]])
+'ValueError'
+>>> failure([[1]], 5)
+'ValueError'
+>>> failure(1.5, [[1]])
+'ValueError'
+>>> failure([[1]], 1.5)
+'ValueError'
+>>> failure(None, [[1]])
+'ValueError'
+>>> failure([[1]], None)
+'ValueError'
+>>> failure({}, [[1]])
+'ValueError'
+>>> failure([[1]], {})
+'ValueError'
+>>> failure({1: [1]}, [[1]])
+'ValueError'
+>>> failure([[1]], {1: [1]})
+'ValueError'
+>>> failure(float('inf'), [[1]])
+'ValueError'
+>>> failure([[1]], float('inf'))
+'ValueError'
+>>> failure(float('nan'), [[1]])
+'ValueError'
+>>> failure([[1]], float('nan'))
+'ValueError'
+>>> failure(-3, [[1]])
+'ValueError'
+>>> failure([[1]], -3)
+'ValueError'
+>>> failure(0, [[1]])
+'ValueError'
+>>> failure([[1]], 0)
+'ValueError'
+>>> failure("abc", [[1]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[1]], "abc") in ('TypeError', 'ValueError')
+True
+>>> failure("", [[1]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[1]], "") in ('TypeError', 'ValueError')
+True
+
+>>> lazy_matrix_mul(5, [[1]])  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+    ...
+ValueError: Scalar operands are not allowed, use '*' instead
+
+>>> lazy_matrix_mul([[1]], None)  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+    ...
+ValueError: Scalar operands are not allowed, use '*' instead
+
+Elements that are not numbers raise a TypeError or a ValueError
+---------------------------------------------------------------
+
+>>> failure([["a"]], [[1]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[1]], [["a"]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[1, "a"]], [[1], [2]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[1, 2]], [["a"], [2]]) in ('TypeError', 'ValueError')
+True
+>>> failure(
+...     [[1, 2], [3, "a"]],
+...     [[1, 2], [3, 4]]) in ('TypeError', 'ValueError')
+True
+>>> failure(
+...     [[1, 2], [3, 4]],
+...     [[1, 2], [3, "a"]]) in ('TypeError', 'ValueError')
+True
+>>> failure([["1"]], [[1]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[1]], [["1"]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[None]], [[1]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[1]], [[None]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[1, None]], [[1], [2]]) in ('TypeError', 'ValueError')
+True
+>>> failure([[1, 2]], [[1], [None]]) in ('TypeError', 'ValueError')
+True
+>>> failure([["a", "b"]], [["c"], ["d"]]) in ('TypeError', 'ValueError')
+True
+
+Missing arguments are reported by Python
+----------------------------------------
+>>> lazy_matrix_mul()  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+    ...
+TypeError: lazy_matrix_mul() missing 2 required positional arguments
+
+>>> lazy_matrix_mul([[1, 2]])  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+    ...
+TypeError: lazy_matrix_mul() missing 1 required positional argument: 'm_b'

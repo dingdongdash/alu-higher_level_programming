@@ -1,0 +1,777 @@
+===========================
+Test cases for matrix_mul()
+===========================
+
+The function multiplies two matrices that are given as lists of lists of
+integers or floats. Invalid arguments raise an exception whose message
+names the argument, and the checks happen in a fixed order.
+
+>>> matrix_mul = __import__('100-matrix_mul').matrix_mul
+
+Sample products from the project page
+-------------------------------------
+>>> print(matrix_mul([[1, 2], [3, 4]], [[1, 2], [3, 4]]))
+[[7, 10], [15, 22]]
+>>> print(matrix_mul([[1, 2]], [[3, 4], [5, 6]]))
+[[13, 16]]
+
+1x1 matrices
+------------
+>>> print(matrix_mul([[5]], [[6]]))
+[[30]]
+>>> print(matrix_mul([[0]], [[7]]))
+[[0]]
+>>> print(matrix_mul([[-2]], [[3]]))
+[[-6]]
+>>> print(matrix_mul([[-2]], [[-3]]))
+[[6]]
+>>> print(matrix_mul([[2.5]], [[2]]))
+[[5.0]]
+>>> print(matrix_mul([[0.5]], [[1.5]]))
+[[0.75]]
+
+Rows, columns and non-square shapes
+-----------------------------------
+>>> print(matrix_mul([[1, 2, 3]], [[4], [5], [6]]))
+[[32]]
+>>> print(matrix_mul([[1], [2], [3]], [[4, 5, 6]]))
+[[4, 5, 6], [8, 10, 12], [12, 15, 18]]
+>>> print(matrix_mul([[1], [2]], [[3, 4]]))
+[[3, 4], [6, 8]]
+>>> print(matrix_mul([[1, 2], [3, 4]], [[1], [2]]))
+[[5], [11]]
+>>> print(matrix_mul(
+...     [[1, 2, 3], [4, 5, 6]],
+...     [[7, 8], [9, 10], [11, 12]]))
+[[58, 64], [139, 154]]
+>>> print(matrix_mul(
+...     [[1, 2], [3, 4], [5, 6]],
+...     [[1, 2, 3, 4], [5, 6, 7, 8]]))
+[[11, 14, 17, 20], [23, 30, 37, 44], [35, 46, 57, 68]]
+>>> print(matrix_mul(
+...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+...     [[9, 8, 7], [6, 5, 4], [3, 2, 1]]))
+[[30, 24, 18], [84, 69, 54], [138, 114, 90]]
+>>> print(matrix_mul([[1, 2, 3, 4]], [[1], [1], [1], [1]]))
+[[10]]
+
+Identity, zeros and negative numbers
+------------------------------------
+>>> print(matrix_mul([[1, 0], [0, 1]], [[5, 6], [7, 8]]))
+[[5, 6], [7, 8]]
+>>> print(matrix_mul([[5, 6], [7, 8]], [[1, 0], [0, 1]]))
+[[5, 6], [7, 8]]
+>>> print(matrix_mul([[0, 0], [0, 0]], [[1, 2], [3, 4]]))
+[[0, 0], [0, 0]]
+>>> print(matrix_mul([[1, 2], [3, 4]], [[0, 0], [0, 0]]))
+[[0, 0], [0, 0]]
+>>> print(matrix_mul([[-1, 2], [3, -4]], [[-1, -2], [3, 4]]))
+[[7, 10], [-15, -22]]
+>>> print(matrix_mul([[-1, -2, -3]], [[1], [1], [1]]))
+[[-6]]
+
+Floats and mixed integers and floats
+------------------------------------
+>>> print(matrix_mul([[1.5, 2.5]], [[2], [4]]))
+[[13.0]]
+>>> print(matrix_mul([[0.5, 0.5], [1.5, 2.5]], [[2, 4], [6, 8]]))
+[[4.0, 6.0], [18.0, 26.0]]
+>>> print(matrix_mul([[1, 2.5]], [[2], [4]]))
+[[12.0]]
+>>> print(matrix_mul([[0.5, 1.5], [2.5, 3.5]], [[0.5, 1.5], [2.5, 3.5]]))
+[[4.0, 6.0], [10.0, 16.0]]
+>>> print(matrix_mul([[1.5]], [[1.5]]))
+[[2.25]]
+>>> print(matrix_mul([[-1.5, 2.0]], [[2.0], [1.25]]))
+[[-0.5]]
+>>> print(matrix_mul([[1.0, 2.0], [3.0, 4.0]], [[1.0, 0.0], [0.0, 1.0]]))
+[[1.0, 2.0], [3.0, 4.0]]
+
+Big values
+----------
+>>> print(matrix_mul([[10**9, 10**9]], [[10**9], [10**9]]))
+[[2000000000000000000]]
+>>> print(matrix_mul([[1e300]], [[1e300]]))
+[[inf]]
+>>> print(matrix_mul([[1e308]], [[10.0]]))
+[[inf]]
+
+Infinity and NaN elements are valid floats
+------------------------------------------
+>>> print(matrix_mul([[float('inf')]], [[2]]))
+[[inf]]
+>>> print(matrix_mul([[float('inf')]], [[-2]]))
+[[-inf]]
+>>> print(matrix_mul([[-float('inf')]], [[2]]))
+[[-inf]]
+>>> print(matrix_mul([[-float('inf')]], [[-2]]))
+[[inf]]
+>>> print(matrix_mul([[2]], [[float('inf')]]))
+[[inf]]
+>>> print(matrix_mul([[float('inf')]], [[0]]))
+[[nan]]
+>>> print(matrix_mul([[float('inf')]], [[float('inf')]]))
+[[inf]]
+>>> print(matrix_mul([[float('inf'), 1]], [[1], [1]]))
+[[inf]]
+>>> print(matrix_mul([[float('inf'), 1]], [[1], [-float('inf')]]))
+[[nan]]
+>>> print(matrix_mul([[float('nan')]], [[2]]))
+[[nan]]
+>>> print(matrix_mul([[2]], [[float('nan')]]))
+[[nan]]
+>>> print(matrix_mul([[float('nan'), 1]], [[1], [1]]))
+[[nan]]
+>>> print(matrix_mul(
+...     [[1.0, 2.0], [3.0, 4.0]],
+...     [[float('nan'), 0.0], [0.0, 1.0]]))
+[[nan, 2.0], [nan, 4.0]]
+
+The result is a new list of lists and the arguments are unchanged
+-----------------------------------------------------------------
+>>> m_a = [[1, 2], [3, 4]]
+>>> m_b = [[5, 6], [7, 8]]
+>>> result = matrix_mul(m_a, m_b)
+>>> print(result)
+[[19, 22], [43, 50]]
+>>> m_a
+[[1, 2], [3, 4]]
+>>> m_b
+[[5, 6], [7, 8]]
+>>> type(result).__name__
+'list'
+>>> [type(row).__name__ for row in result]
+['list', 'list']
+>>> result is m_a or result is m_b
+False
+>>> result[0] is m_a[0] or result[0] is m_b[0]
+False
+>>> m_a = [[1, 1], [1, 1]]
+>>> result = matrix_mul(m_a, m_a)
+>>> result[0] is result[1]
+False
+>>> result[0][0] = 99
+>>> print(result)
+[[99, 2], [2, 2]]
+>>> m_a
+[[1, 1], [1, 1]]
+>>> m_a = [[1, 2], [3, 4]]
+>>> print(matrix_mul(m_a, m_a))
+[[7, 10], [15, 22]]
+>>> print(matrix_mul(m_a, m_a))
+[[7, 10], [15, 22]]
+>>> m_a
+[[1, 2], [3, 4]]
+
+Results keep integers as integers and become floats with floats
+---------------------------------------------------------------
+>>> [type(item).__name__ for item in matrix_mul([[1, 2]], [[3], [4]])[0]]
+['int']
+>>> [type(item).__name__ for item in matrix_mul([[1.0, 2]], [[3], [4]])[0]]
+['float']
+>>> [type(item).__name__ for item in matrix_mul([[1, 2]], [[3.0], [4]])[0]]
+['float']
+>>> [type(item).__name__ for item in matrix_mul([[1.5]], [[2]])[0]]
+['float']
+
+m_a and m_b must be lists
+-------------------------
+>>> matrix_mul("abc", [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], "abc")
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul(5, [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], 5)
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul(1.5, [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], 1.5)
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul(None, [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], None)
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul({}, [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], {})
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul({1: [1]}, [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], {1: [1]})
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul(([1],), [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], ([1],))
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul(({1},), [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul({1}, [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], {1})
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul(float('inf'), [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], float('nan'))
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul("", [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([[1]], "")
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+
+m_a and m_b must be lists of lists
+----------------------------------
+>>> matrix_mul([1, 2], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], [1, 2])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul(["a"], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], ["a"])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([None], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], [None])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([(1, 2)], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], [(1, 2)])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([{}], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], [{}])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([[1, 2], 3], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], [[1, 2], 3])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([1, [2, 3]], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], [1, [2, 3]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([[1, 2], [3, 4], "ab"], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], [[1, 2], [3, 4], "ab"])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([[1], (2,)], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], [[1], (2,)])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([float('inf')], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([[1]], [float('nan')])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+
+m_a and m_b can't be empty
+--------------------------
+>>> matrix_mul([], [[1]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+>>> matrix_mul([[1]], [])
+Traceback (most recent call last):
+    ...
+ValueError: m_b can't be empty
+>>> matrix_mul([[]], [[1]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+>>> matrix_mul([[1]], [[]])
+Traceback (most recent call last):
+    ...
+ValueError: m_b can't be empty
+>>> matrix_mul([], [])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+>>> matrix_mul([[]], [[]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+>>> matrix_mul([], [[]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+>>> matrix_mul([[]], [])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+
+Elements must be integers or floats
+-----------------------------------
+>>> matrix_mul([["a"]], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1]], [["a"]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[1, "a"]], [[1], [2]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1, 2]], [["a"], [2]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[1, 2], [3, "a"]], [[1, 2], [3, 4]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1, 2], [3, 4]], [[1, 2], [3, "a"]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([["1"]], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1]], [["1"]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[None]], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1]], [[None]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[1, [2]]], [[1], [2]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1, 2]], [[1], [[2]]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[1, (2,)]], [[1], [2]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1, 2]], [[1], [(2,)]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[1, {}]], [[1], [2]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1, 2]], [[1], [{}]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[1j]], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1]], [[1j]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[1, 2], [3, 4], [5, 6j]], [[1, 2], [3, 4]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1, 2]], [[1, 2], [3, 4], [5, 6j]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([["a", 1]], [[1], [2]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+
+Every row must have the same size
+---------------------------------
+>>> matrix_mul([[1], [2, 3]], [[1, 2], [3, 4]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1, 2], [3]], [[1, 2], [3, 4]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1, 2], [3, 4], [5]], [[1, 2], [3, 4]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1, 2], [3, 4], [5, 6, 7]], [[1, 2], [3, 4]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1, 2], [3, 4], [5, 6], [7]], [[1, 2], [3, 4]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1], []], [[1, 2]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[], [1]], [[1, 2]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1, 2]], [[1], [2, 3]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_b must be of the same size
+>>> matrix_mul([[1, 2]], [[1, 2], [3]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_b must be of the same size
+>>> matrix_mul([[1, 2], [3, 4]], [[1, 2], [3, 4], [5]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_b must be of the same size
+>>> matrix_mul([[1, 2]], [[1, 2], [3, 4], [5, 6, 7]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_b must be of the same size
+>>> matrix_mul([[1, 2]], [[1], []])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_b must be of the same size
+>>> matrix_mul([[1, 2]], [[], [1]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_b must be of the same size
+
+m_a and m_b must be able to be multiplied
+-----------------------------------------
+>>> matrix_mul([[1, 2]], [[1, 2]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a and m_b can't be multiplied
+>>> matrix_mul([[1], [2]], [[1], [2]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a and m_b can't be multiplied
+>>> matrix_mul([[1, 2], [3, 4]], [[1, 2, 3]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a and m_b can't be multiplied
+>>> matrix_mul([[1, 2, 3]], [[1, 2], [3, 4]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a and m_b can't be multiplied
+>>> matrix_mul([[1]], [[1], [2]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a and m_b can't be multiplied
+>>> matrix_mul([[1, 2]], [[1]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a and m_b can't be multiplied
+>>> matrix_mul([[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a and m_b can't be multiplied
+>>> matrix_mul([[1, 2], [3, 4], [5, 6]], [[1, 2], [3, 4], [5, 6]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a and m_b can't be multiplied
+
+Order: a list check comes before everything, m_a before m_b
+-----------------------------------------------------------
+>>> matrix_mul("abc", "abc")
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul(None, 5)
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul("abc", [1])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul("abc", [])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul("abc", [["a"]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul(5, [[1], [2, 3]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list
+>>> matrix_mul([1], "abc")
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul([], None)
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul([[]], 5)
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul([["a"]], 5)
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul([[1], [2, 3]], {})
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+>>> matrix_mul([[1, 2]], 1.5)
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list
+
+Order: the list of lists check comes after the list check and before the empty check
+------------------------------------------------------------------------------------
+>>> matrix_mul([1], [1])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([1], [])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([1], [[]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([1], [["a"]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([1], [[1], [2, 3]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+>>> matrix_mul([], [1])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([[]], [1])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([["a"]], [1])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([[1], [2, 3]], [1])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([[1, 2]], [[1], "ab"])
+Traceback (most recent call last):
+    ...
+TypeError: m_b must be a list of lists
+>>> matrix_mul([[1], (2,)], [[1], (2,)])
+Traceback (most recent call last):
+    ...
+TypeError: m_a must be a list of lists
+
+Order: the empty check comes before the content and shape checks
+----------------------------------------------------------------
+>>> matrix_mul([["a"]], [])
+Traceback (most recent call last):
+    ...
+ValueError: m_b can't be empty
+>>> matrix_mul([["a"]], [[]])
+Traceback (most recent call last):
+    ...
+ValueError: m_b can't be empty
+>>> matrix_mul([[1], [2, 3]], [])
+Traceback (most recent call last):
+    ...
+ValueError: m_b can't be empty
+>>> matrix_mul([[1, 2]], [])
+Traceback (most recent call last):
+    ...
+ValueError: m_b can't be empty
+>>> matrix_mul([], [["a"]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+>>> matrix_mul([[]], [["a"]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+>>> matrix_mul([], [[1], [2, 3]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+>>> matrix_mul([[]], [[1, 2]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+>>> matrix_mul([[]], [[]])
+Traceback (most recent call last):
+    ...
+ValueError: m_a can't be empty
+
+Order: the content check comes before the rectangle check
+---------------------------------------------------------
+>>> matrix_mul([[1, "a"], [2]], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([["a"], [1, 2]], [[1]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1, 2], [3]], [["a"]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[1], [2, 3]], [[1], [2, "a"]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([[1, 2]], [["a"], [1, 2]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+>>> matrix_mul([["a"]], [["b"]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1, 2], [3, "a"]], [[1, 2], [3, "b"]])
+Traceback (most recent call last):
+    ...
+TypeError: m_a should contain only integers or floats
+>>> matrix_mul([[1, 2], [3]], [[1], [None]])
+Traceback (most recent call last):
+    ...
+TypeError: m_b should contain only integers or floats
+
+Order: the rectangle check comes before the multiplication check, m_a before m_b
+--------------------------------------------------------------------------------
+>>> matrix_mul([[1, 2], [3]], [[1, 2], [3, 4]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1, 2], [3]], [[1], [2], [3]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1, 2]], [[1], [2, 3], [4]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_b must be of the same size
+>>> matrix_mul([[1, 2, 3]], [[1, 2], [3]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_b must be of the same size
+>>> matrix_mul([[1], [2, 3]], [[1], [2, 3]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1, 2], [3]], [[1, 2, 3], [4]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_a must be of the same size
+>>> matrix_mul([[1, 2], [3, 4]], [[1, 2, 3], [4, 5]])
+Traceback (most recent call last):
+    ...
+TypeError: each row of m_b must be of the same size
+
+Missing arguments are reported by Python
+----------------------------------------
+>>> matrix_mul()  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+    ...
+TypeError: matrix_mul() missing 2 required positional arguments
+
+>>> matrix_mul([[1, 2]])  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+    ...
+TypeError: matrix_mul() missing 1 required positional argument: 'm_b'
+
+>>> matrix_mul(m_b=[[1, 2]])  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+    ...
+TypeError: matrix_mul() missing 1 required positional argument: 'm_a'
