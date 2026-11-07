@@ -113,6 +113,36 @@ The first argument is reported when both are wrong:
     Traceback (most recent call last):
     TypeError: a must be an integer
 
+Infinite floats cannot be casted to integers (float overflow):
+
+    >>> add_integer(float('inf'))
+    Traceback (most recent call last):
+    OverflowError: cannot convert float infinity to integer
+    >>> add_integer(float('-inf'))
+    Traceback (most recent call last):
+    OverflowError: cannot convert float infinity to integer
+    >>> add_integer(1, float('inf'))
+    Traceback (most recent call last):
+    OverflowError: cannot convert float infinity to integer
+    >>> add_integer(1, float('-inf'))
+    Traceback (most recent call last):
+    OverflowError: cannot convert float infinity to integer
+    >>> add_integer(float('inf'), float('inf'))
+    Traceback (most recent call last):
+    OverflowError: cannot convert float infinity to integer
+
+NaN cannot be casted to an integer:
+
+    >>> add_integer(float('nan'))
+    Traceback (most recent call last):
+    ValueError: cannot convert float NaN to integer
+    >>> add_integer(1, float('nan'))
+    Traceback (most recent call last):
+    ValueError: cannot convert float NaN to integer
+    >>> add_integer(float('nan'), float('nan'))
+    Traceback (most recent call last):
+    ValueError: cannot convert float NaN to integer
+
 A missing argument raises a TypeError:
 
     >>> add_integer()  # doctest: +IGNORE_EXCEPTION_DETAIL
