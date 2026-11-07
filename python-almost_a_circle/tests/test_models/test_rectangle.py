@@ -5,6 +5,7 @@ The tests cover the constructor, the validation rules and their messages,
 the area, the display, the text description, the update and the dictionary
 representation, the JSON helpers and the file methods used by rectangles.
 """
+import csv
 import inspect
 import io
 import json
@@ -26,6 +27,25 @@ def remove_json_files():
     for name in ("Base.json", "Rectangle.json", "Square.json"):
         if os.path.exists(name):
             os.remove(name)
+
+
+def remove_csv_files():
+    """Delete the CSV files that the CSV save methods may have created."""
+    for name in ("Base.csv", "Rectangle.csv", "Square.csv"):
+        if os.path.exists(name):
+            os.remove(name)
+
+
+def csv_lines(name):
+    """Return the list of the lines stored in a CSV file."""
+    with open(name, "r", newline="") as file:
+        return file.read().splitlines()
+
+
+def write_raw(name, text):
+    """Replace the content of a file with a text, keeping every newline."""
+    with open(name, "w", newline="") as file:
+        file.write(text)
 
 
 def captured(function):
@@ -2376,3 +2396,203 @@ class TestRectangleJson(unittest.TestCase):
         loaded = Rectangle.load_from_file()
         self.assertIs(type(loaded), list)
         self.assertIs(type(loaded[0]), Rectangle)
+
+
+class TestRectangleCsv(unittest.TestCase):
+    """Tests of the CSV methods used by Rectangle."""
+
+    def setUp(self):
+        """Reset the id counter and remove the generated files."""
+        reset_counter()
+        remove_json_files()
+        remove_csv_files()
+
+    def tearDown(self):
+        """Remove the files created by the test."""
+        remove_json_files()
+        remove_csv_files()
+
+    def test_save_example_rows(self):
+        """Check the rows saved for the project example."""
+        Rectangle.save_to_file_csv([Rectangle(10, 7, 2, 8), Rectangle(2, 4)])
+        self.assertEqual(csv_lines("Rectangle.csv"),
+                         ["1,10,7,2,8", "2,2,4,0,0"])
+
+    def test_save_filename(self):
+        """Check that the file is named Rectangle.csv."""
+        Rectangle.save_to_file_csv([Rectangle(1, 1)])
+        self.assertTrue(os.path.exists("Rectangle.csv"))
+        self.assertFalse(os.path.exists("Square.csv"))
+
+    def test_save_column_order(self):
+        """Check the order id, width, height, x, y of the columns."""
+        Rectangle.save_to_file_csv([Rectangle(2, 3, 4, 5, 1)])
+        self.assertEqual(csv_lines("Rectangle.csv"), ["1,2,3,4,5"])
+
+    def test_save_distinct_values(self):
+        """Check that every value goes to its own column."""
+        Rectangle.save_to_file_csv([Rectangle(11, 22, 33, 44, 55)])
+        with open("Rectangle.csv", "r", newline="") as file:
+            row = list(csv.reader(file))[0]
+        self.assertEqual(row, ["55", "11", "22", "33", "44"])
+
+    def test_save_default_x_and_y(self):
+        """Check the zero values written for the default x and y."""
+        Rectangle.save_to_file_csv([Rectangle(3, 4, id=6)])
+        self.assertEqual(csv_lines("Rectangle.csv"), ["6,3,4,0,0"])
+
+    def test_save_none(self):
+        """Check that None writes an empty file."""
+        Rectangle.save_to_file_csv(None)
+        self.assertEqual(read_file("Rectangle.csv"), "")
+
+    def test_save_empty_list(self):
+        """Check that an empty list writes an empty file."""
+        Rectangle.save_to_file_csv([])
+        self.assertEqual(read_file("Rectangle.csv"), "")
+
+    def test_save_one_object(self):
+        """Check that one object gives exactly one line."""
+        Rectangle.save_to_file_csv([Rectangle(5, 6, 7, 8, 9)])
+        self.assertEqual(csv_lines("Rectangle.csv"), ["9,5,6,7,8"])
+
+    def test_save_several_objects(self):
+        """Check that several objects give one line each, in order."""
+        Rectangle.save_to_file_csv(
+            [Rectangle(i + 1, i + 2, i, i, i + 10) for i in range(4)])
+        self.assertEqual(csv_lines("Rectangle.csv"),
+                         ["10,1,2,0,0", "11,2,3,1,1",
+                          "12,3,4,2,2", "13,4,5,3,3"])
+
+    def test_save_overwrites(self):
+        """Check that a second save replaces the first one."""
+        Rectangle.save_to_file_csv([Rectangle(1, 1), Rectangle(2, 2)])
+        Rectangle.save_to_file_csv([Rectangle(3, 3)])
+        self.assertEqual(csv_lines("Rectangle.csv"), ["3,3,3,0,0"])
+
+    def test_save_does_not_append(self):
+        """Check that saving the same object twice gives one line."""
+        r = Rectangle(1, 2)
+        Rectangle.save_to_file_csv([r])
+        Rectangle.save_to_file_csv([r])
+        self.assertEqual(csv_lines("Rectangle.csv"), ["1,1,2,0,0"])
+
+    def test_save_has_no_header(self):
+        """Check that the first line is the first object."""
+        Rectangle.save_to_file_csv([Rectangle(4, 5, 6, 7, 8)])
+        self.assertEqual(csv_lines("Rectangle.csv")[0], "8,4,5,6,7")
+
+    def test_save_is_not_json(self):
+        """Check that the file does not hold JSON text."""
+        Rectangle.save_to_file_csv([Rectangle(4, 5, 6, 7, 8)])
+        self.assertNotIn("width", read_file("Rectangle.csv"))
+        self.assertNotIn("{", read_file("Rectangle.csv"))
+
+    def test_load_missing_file(self):
+        """Check that a missing file gives an empty list."""
+        self.assertEqual(Rectangle.load_from_file_csv(), [])
+
+    def test_load_example(self):
+        """Check the objects loaded by the project example."""
+        r1 = Rectangle(10, 7, 2, 8)
+        r2 = Rectangle(2, 4)
+        Rectangle.save_to_file_csv([r1, r2])
+        loaded = Rectangle.load_from_file_csv()
+        self.assertEqual([str(r) for r in loaded],
+                         ["[Rectangle] (1) 2/8 - 10/7",
+                          "[Rectangle] (2) 0/0 - 2/4"])
+        self.assertTrue(all(o is not s for o, s in zip(loaded, [r1, r2])))
+
+    def test_load_types(self):
+        """Check the types of the loaded objects."""
+        Rectangle.save_to_file_csv([Rectangle(1, 1), Rectangle(2, 2)])
+        loaded = Rectangle.load_from_file_csv()
+        self.assertIs(type(loaded), list)
+        self.assertEqual(len(loaded), 2)
+        self.assertTrue(all(type(r) is Rectangle for r in loaded))
+
+    def test_load_values_are_integers(self):
+        """Check that the loaded values are integers and not text."""
+        Rectangle.save_to_file_csv([Rectangle(10, 7, 2, 8, 3)])
+        r = Rectangle.load_from_file_csv()[0]
+        for value in (r.id, r.width, r.height, r.x, r.y):
+            self.assertIs(type(value), int)
+        self.assertEqual(r.area(), 70)
+
+    def test_load_columns(self):
+        """Check which column goes to which attribute."""
+        write_raw("Rectangle.csv", "55,11,22,33,44\r\n")
+        r = Rectangle.load_from_file_csv()[0]
+        self.assertEqual((r.id, r.width, r.height, r.x, r.y),
+                         (55, 11, 22, 33, 44))
+
+    def test_load_empty_file(self):
+        """Check that an empty file gives an empty list."""
+        write_raw("Rectangle.csv", "")
+        self.assertEqual(Rectangle.load_from_file_csv(), [])
+
+    def test_load_trailing_blank_row(self):
+        """Check that a trailing blank row gives no extra object."""
+        write_raw("Rectangle.csv", "1,10,7,2,8\r\n2,2,4,0,0\r\n\r\n")
+        self.assertEqual(len(Rectangle.load_from_file_csv()), 2)
+
+    def test_load_without_final_newline(self):
+        """Check that a last row without a line ending is read."""
+        write_raw("Rectangle.csv", "1,10,7,2,8\n2,2,4,0,0")
+        self.assertEqual(len(Rectangle.load_from_file_csv()), 2)
+
+    def test_load_does_not_read_square_file(self):
+        """Check that Rectangle does not read Square.csv."""
+        write_raw("Square.csv", "5,5,0,0\r\n6,6,0,0\r\n")
+        self.assertEqual(Rectangle.load_from_file_csv(), [])
+
+    def test_load_does_not_read_json_file(self):
+        """Check that Rectangle does not read Rectangle.json."""
+        Rectangle.save_to_file([Rectangle(1, 2)])
+        self.assertEqual(Rectangle.load_from_file_csv(), [])
+
+    def test_load_after_empty_save(self):
+        """Check that an empty save is loaded as an empty list."""
+        Rectangle.save_to_file_csv(None)
+        self.assertEqual(Rectangle.load_from_file_csv(), [])
+        Rectangle.save_to_file_csv([])
+        self.assertEqual(Rectangle.load_from_file_csv(), [])
+
+    def test_round_trip_attributes(self):
+        """Check that the attributes survive a save and a load."""
+        r1 = Rectangle(10, 7, 2, 8, 41)
+        r2 = Rectangle(2, 4, 0, 0, 42)
+        Rectangle.save_to_file_csv([r1, r2])
+        loaded = Rectangle.load_from_file_csv()
+        for original, copy in zip([r1, r2], loaded):
+            self.assertEqual(copy.id, original.id)
+            self.assertEqual(copy.width, original.width)
+            self.assertEqual(copy.height, original.height)
+            self.assertEqual(copy.x, original.x)
+            self.assertEqual(copy.y, original.y)
+            self.assertEqual(copy.to_dictionary(), original.to_dictionary())
+
+    def test_round_trip_identity(self):
+        """Check that the loaded objects are new objects."""
+        r1 = Rectangle(10, 7, 2, 8)
+        Rectangle.save_to_file_csv([r1])
+        copy = Rectangle.load_from_file_csv()[0]
+        self.assertIsNot(copy, r1)
+        self.assertNotEqual(id(copy), id(r1))
+        self.assertFalse(copy == r1)
+        self.assertEqual(str(copy), str(r1))
+
+    def test_loaded_objects_are_usable(self):
+        """Check that a loaded object works like any Rectangle."""
+        Rectangle.save_to_file_csv([Rectangle(3, 2, 1, 4)])
+        r = Rectangle.load_from_file_csv()[0]
+        self.assertEqual(r.area(), 6)
+        r.update(width=5)
+        self.assertEqual(str(r), "[Rectangle] (1) 1/4 - 5/2")
+
+    def test_round_trip_keeps_file_content(self):
+        """Check that saving the loaded objects keeps the same file."""
+        Rectangle.save_to_file_csv([Rectangle(10, 7, 2, 8), Rectangle(2, 4)])
+        before = read_file("Rectangle.csv")
+        Rectangle.save_to_file_csv(Rectangle.load_from_file_csv())
+        self.assertEqual(read_file("Rectangle.csv"), before)

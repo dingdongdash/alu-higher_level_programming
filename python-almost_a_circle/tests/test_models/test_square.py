@@ -5,6 +5,7 @@ The tests cover the constructor, the size property, the validation rules, the
 inherited methods, the update, the dictionary representation, the text
 description and the JSON helpers and file methods used by squares.
 """
+import csv
 import inspect
 import io
 import json
@@ -27,6 +28,25 @@ def remove_json_files():
     for name in ("Base.json", "Rectangle.json", "Square.json"):
         if os.path.exists(name):
             os.remove(name)
+
+
+def remove_csv_files():
+    """Delete the CSV files that the CSV save methods may have created."""
+    for name in ("Base.csv", "Rectangle.csv", "Square.csv"):
+        if os.path.exists(name):
+            os.remove(name)
+
+
+def csv_lines(name):
+    """Return the list of the lines stored in a CSV file."""
+    with open(name, "r", newline="") as file:
+        return file.read().splitlines()
+
+
+def write_raw(name, text):
+    """Replace the content of a file with a text, keeping every newline."""
+    with open(name, "w", newline="") as file:
+        file.write(text)
 
 
 def captured(function):
@@ -1876,3 +1896,216 @@ class TestSquareJson(unittest.TestCase):
         """Check that the Rectangle file is not read by Square."""
         Rectangle.save_to_file([Rectangle(1, 1)])
         self.assertEqual(Square.load_from_file(), [])
+
+
+class TestSquareCsv(unittest.TestCase):
+    """Tests of the CSV methods used by Square."""
+
+    def setUp(self):
+        """Reset the id counter and remove the generated files."""
+        reset_counter()
+        remove_json_files()
+        remove_csv_files()
+
+    def tearDown(self):
+        """Remove the files created by the test."""
+        remove_json_files()
+        remove_csv_files()
+
+    def test_save_example_rows(self):
+        """Check the rows saved for the project example."""
+        Square.save_to_file_csv([Square(5), Square(7, 9, 1)])
+        self.assertEqual(csv_lines("Square.csv"), ["1,5,0,0", "2,7,9,1"])
+
+    def test_save_explicit_ids(self):
+        """Check the row written for a Square with an explicit id."""
+        Square.save_to_file_csv([Square(5, 0, 0, 5), Square(7, 9, 1, 6)])
+        self.assertEqual(csv_lines("Square.csv"), ["5,5,0,0", "6,7,9,1"])
+
+    def test_save_filename(self):
+        """Check that the file is named Square.csv."""
+        Square.save_to_file_csv([Square(1)])
+        self.assertTrue(os.path.exists("Square.csv"))
+        self.assertFalse(os.path.exists("Rectangle.csv"))
+
+    def test_save_column_order(self):
+        """Check the order id, size, x, y of the columns."""
+        Square.save_to_file_csv([Square(2, 3, 4, 1)])
+        self.assertEqual(csv_lines("Square.csv"), ["1,2,3,4"])
+
+    def test_save_distinct_values(self):
+        """Check that every value goes to its own column."""
+        Square.save_to_file_csv([Square(11, 22, 33, 44)])
+        with open("Square.csv", "r", newline="") as file:
+            row = list(csv.reader(file))[0]
+        self.assertEqual(row, ["44", "11", "22", "33"])
+
+    def test_save_uses_square_format(self):
+        """Check that a Square row has four fields and not five."""
+        Square.save_to_file_csv([Square(5, 1, 2, 3)])
+        with open("Square.csv", "r", newline="") as file:
+            row = list(csv.reader(file))[0]
+        self.assertEqual(len(row), 4)
+        self.assertEqual(row, ["3", "5", "1", "2"])
+
+    def test_save_none(self):
+        """Check that None writes an empty file."""
+        Square.save_to_file_csv(None)
+        self.assertEqual(read_file("Square.csv"), "")
+
+    def test_save_empty_list(self):
+        """Check that an empty list writes an empty file."""
+        Square.save_to_file_csv([])
+        self.assertEqual(read_file("Square.csv"), "")
+
+    def test_save_one_object(self):
+        """Check that one object gives exactly one line."""
+        Square.save_to_file_csv([Square(4, 5, 6, 7)])
+        self.assertEqual(csv_lines("Square.csv"), ["7,4,5,6"])
+
+    def test_save_several_objects(self):
+        """Check that several objects give one line each, in order."""
+        Square.save_to_file_csv(
+            [Square(i + 1, i, i, i + 10) for i in range(4)])
+        self.assertEqual(csv_lines("Square.csv"),
+                         ["10,1,0,0", "11,2,1,1", "12,3,2,2", "13,4,3,3"])
+
+    def test_save_overwrites(self):
+        """Check that a second save replaces the first one."""
+        Square.save_to_file_csv([Square(1), Square(2)])
+        Square.save_to_file_csv([Square(3)])
+        self.assertEqual(csv_lines("Square.csv"), ["3,3,0,0"])
+
+    def test_save_does_not_append(self):
+        """Check that saving the same object twice gives one line."""
+        s = Square(2)
+        Square.save_to_file_csv([s])
+        Square.save_to_file_csv([s])
+        self.assertEqual(csv_lines("Square.csv"), ["1,2,0,0"])
+
+    def test_save_has_no_header(self):
+        """Check that the first line is the first object."""
+        Square.save_to_file_csv([Square(4, 5, 6, 7)])
+        self.assertEqual(csv_lines("Square.csv")[0], "7,4,5,6")
+
+    def test_save_is_not_json(self):
+        """Check that the file does not hold JSON text."""
+        Square.save_to_file_csv([Square(4, 5, 6, 7)])
+        self.assertNotIn("size", read_file("Square.csv"))
+        self.assertNotIn("{", read_file("Square.csv"))
+
+    def test_save_follows_size_changes(self):
+        """Check that the saved size is the current size."""
+        s = Square(2, 0, 0, 3)
+        s.size = 9
+        Square.save_to_file_csv([s])
+        self.assertEqual(csv_lines("Square.csv"), ["3,9,0,0"])
+
+    def test_load_missing_file(self):
+        """Check that a missing file gives an empty list."""
+        self.assertEqual(Square.load_from_file_csv(), [])
+
+    def test_load_example(self):
+        """Check the objects loaded by the project example."""
+        s1 = Square(5)
+        s2 = Square(7, 9, 1)
+        Square.save_to_file_csv([s1, s2])
+        loaded = Square.load_from_file_csv()
+        self.assertEqual([str(s) for s in loaded],
+                         ["[Square] (1) 0/0 - 5", "[Square] (2) 9/1 - 7"])
+        self.assertTrue(all(o is not s for o, s in zip(loaded, [s1, s2])))
+
+    def test_load_types(self):
+        """Check the types of the loaded objects."""
+        Square.save_to_file_csv([Square(1), Square(2)])
+        loaded = Square.load_from_file_csv()
+        self.assertIs(type(loaded), list)
+        self.assertEqual(len(loaded), 2)
+        self.assertTrue(all(type(s) is Square for s in loaded))
+
+    def test_load_values_are_integers(self):
+        """Check that the loaded values are integers and not text."""
+        Square.save_to_file_csv([Square(5, 1, 2, 3)])
+        s = Square.load_from_file_csv()[0]
+        for value in (s.id, s.size, s.width, s.height, s.x, s.y):
+            self.assertIs(type(value), int)
+        self.assertEqual(s.area(), 25)
+
+    def test_load_columns(self):
+        """Check which column goes to which attribute."""
+        write_raw("Square.csv", "44,11,22,33\r\n")
+        s = Square.load_from_file_csv()[0]
+        self.assertEqual((s.id, s.size, s.x, s.y), (44, 11, 22, 33))
+        self.assertEqual((s.width, s.height), (11, 11))
+
+    def test_load_empty_file(self):
+        """Check that an empty file gives an empty list."""
+        write_raw("Square.csv", "")
+        self.assertEqual(Square.load_from_file_csv(), [])
+
+    def test_load_trailing_blank_row(self):
+        """Check that a trailing blank row gives no extra object."""
+        write_raw("Square.csv", "5,5,0,0\r\n6,7,9,1\r\n\r\n")
+        self.assertEqual(len(Square.load_from_file_csv()), 2)
+
+    def test_load_without_final_newline(self):
+        """Check that a last row without a line ending is read."""
+        write_raw("Square.csv", "5,5,0,0\n6,7,9,1")
+        self.assertEqual(len(Square.load_from_file_csv()), 2)
+
+    def test_load_does_not_read_rectangle_file(self):
+        """Check that Square does not read Rectangle.csv."""
+        Rectangle.save_to_file_csv([Rectangle(5, 5), Rectangle(6, 6)])
+        self.assertEqual(Square.load_from_file_csv(), [])
+
+    def test_load_does_not_read_json_file(self):
+        """Check that Square does not read Square.json."""
+        Square.save_to_file([Square(1)])
+        self.assertEqual(Square.load_from_file_csv(), [])
+
+    def test_load_after_empty_save(self):
+        """Check that an empty save is loaded as an empty list."""
+        Square.save_to_file_csv(None)
+        self.assertEqual(Square.load_from_file_csv(), [])
+        Square.save_to_file_csv([])
+        self.assertEqual(Square.load_from_file_csv(), [])
+
+    def test_round_trip_attributes(self):
+        """Check that the attributes survive a save and a load."""
+        s1 = Square(5, 0, 0, 41)
+        s2 = Square(7, 9, 1, 42)
+        Square.save_to_file_csv([s1, s2])
+        loaded = Square.load_from_file_csv()
+        for original, copy in zip([s1, s2], loaded):
+            self.assertEqual(copy.id, original.id)
+            self.assertEqual(copy.size, original.size)
+            self.assertEqual(copy.width, original.width)
+            self.assertEqual(copy.height, original.height)
+            self.assertEqual(copy.x, original.x)
+            self.assertEqual(copy.y, original.y)
+            self.assertEqual(copy.to_dictionary(), original.to_dictionary())
+
+    def test_round_trip_identity(self):
+        """Check that the loaded objects are new objects."""
+        s1 = Square(7, 9, 1)
+        Square.save_to_file_csv([s1])
+        copy = Square.load_from_file_csv()[0]
+        self.assertIsNot(copy, s1)
+        self.assertNotEqual(id(copy), id(s1))
+        self.assertFalse(copy == s1)
+        self.assertEqual(str(copy), str(s1))
+
+    def test_loaded_objects_are_usable(self):
+        """Check that a loaded object works like any Square."""
+        Square.save_to_file_csv([Square(3, 1, 4)])
+        s = Square.load_from_file_csv()[0]
+        self.assertEqual(s.area(), 9)
+        s.size = 6
+        self.assertEqual(str(s), "[Square] (1) 1/4 - 6")
+
+    def test_round_trip_keeps_file_content(self):
+        """Check that saving the loaded objects keeps the same file."""
+        Square.save_to_file_csv([Square(5), Square(7, 9, 1)])
+        before = read_file("Square.csv")
+        Square.save_to_file_csv(Square.load_from_file_csv())
+        self.assertEqual(read_file("Square.csv"), before)
