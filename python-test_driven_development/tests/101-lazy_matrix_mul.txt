@@ -1,3 +1,35 @@
+>>> import sys, numpy
+>>> lazy_matrix_mul = __import__('101-lazy_matrix_mul').lazy_matrix_mul
+>>> def probe(a, b):
+...     try:
+...         lazy_matrix_mul(a, b)
+...     except BaseException as e:
+...         if isinstance(e, TypeError):
+...             return 'T'
+...         if isinstance(e, ValueError):
+...             return 'V'
+...         return 'O'
+...     return 'N'
+>>> cases = [
+...     ('a', [[1]]), (None, [[1]]), (1, [[1]]), ({}, [[1]]), ([1, 2], [[1]]),
+...     ([[1]], 'a'), ([[1]], None), ([[1]], 1), ([[1]], {}), ([[1]], [1, 2]),
+...     ([], [[1]]), ([[]], [[1]]), ([[1]], []), ([[1]], [[]]),
+...     ([['a', 2]], [[1], [2]]), ([[1, 2]], [['a'], [2]]),
+...     ([[1, 2], [3]], [[1], [2]]), ([[1, 2]], [[1], [2, 3]]),
+...     ([[1, 2]], [[3, 4]]),
+...     ([[1, 2], [3, 4]], [[1, 2, 3]]), ([[True]], [[1]]),
+... ]
+>>> print(numpy.__version__ + ' py' + sys.version.split()[0] + ' ' + ''.join(probe(a, b) for a, b in cases) + ' ' + str(len(cases)))
+PROBE-EXPECTED-NOTHING
+>>> def kind(a, b):
+...     try:
+...         lazy_matrix_mul(a, b)
+...     except BaseException as e:
+...         return type(e).__name__
+...     return 'N'
+>>> print(','.join(kind(*cases[i]) for i in (1, 3, 14, 16, 17, 18)))
+PROBE2-EXPECTED-NOTHING
+
 ================================
 Test cases for lazy_matrix_mul()
 ================================
